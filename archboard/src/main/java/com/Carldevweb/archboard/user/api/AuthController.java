@@ -1,0 +1,29 @@
+package com.Carldevweb.archboard.user.api;
+
+import com.Carldevweb.archboard.user.api.dto.AuthResponse;
+import com.Carldevweb.archboard.user.api.dto.LoginRequest;
+import com.Carldevweb.archboard.user.api.dto.RegisterRequest;
+import com.Carldevweb.archboard.user.app.AuthService;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/auth")
+public class AuthController {
+
+    private final AuthService auth;
+
+    public AuthController(AuthService auth) {
+        this.auth = auth;
+    }
+
+    @PostMapping("/register")
+    public AuthResponse register(@Valid @RequestBody RegisterRequest req) {
+        return auth.register(req);
+    }
+
+    @PostMapping("/login")
+    public AuthResponse login(@Valid @RequestBody LoginRequest req) {
+        return auth.login(req);
+    }
+}
