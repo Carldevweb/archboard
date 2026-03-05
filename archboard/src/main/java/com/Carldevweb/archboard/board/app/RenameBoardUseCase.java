@@ -8,15 +8,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class CreateBoardUseCase {
+public class RenameBoardUseCase {
 
-    public record Command(Long ownerId, Long workspaceId, String name) {}
-    public record Result(Long id, String name) {}
+    public record Command(Long ownerId, Long boardId, String newName) {}
+    public record Result(Long id, Long workspaceId, String name) {}
 
     private final AccessService access;
     private final BoardRepository boards;
 
-    public CreateBoardUseCase(AccessService access, BoardRepository boards) {
+    public RenameBoardUseCase(AccessService access, BoardRepository boards) {
         this.access = access;
         this.boards = boards;
     }
@@ -24,20 +24,23 @@ public class CreateBoardUseCase {
     @Transactional
     public Result execute(Command cmd) {
         if (cmd.ownerId() == null) throw new IllegalArgumentException("ownerId is required");
-        if (cmd.workspaceId() == null) throw new IllegalArgumentException("workspaceId is required");
+        if (cmd.boardId() == null) throw new IllegalArgumentException("boardId is required");
 
-        String name = (cmd.name() == null) ? null : cmd.name().trim();
+        String name = (cmd.newName() == null) ? null : cmd.newName().trim();
         if (name == null || name.isBlank()) throw new IllegalArgumentException("name is required");
         if (name.length() > 60) throw new IllegalArgumentException("name too long (max 60)");
 
-        // ✅ check accès centralisé
-        access.requireWorkspaceOwner(cmd.ownerId(), cmd.workspaceId());
+        Board b = access.requireBoardOwner(cmd.ownerId(), cmd.boardId());
 
-        if (boards.existsByWorkspaceIdAndName(cmd.workspaceId(), name)) {
+        if (b.getName().equalsIgnoreCase(name)) {
+            return new Result(b.getId(), b.getWorkspaceId(), b.getName());
+        }
+
+        if (boards.existsByWorkspaceIdAndName(b.getWorkspaceId(), name)) {
             throw new ConflictException("Board name already used in this workspace");
         }
 
-        Board saved = boards.save(Board.create(cmd.workspaceId(), name));
-        return new Result(saved.getId(), saved.getName());
+        Board saved = boards.save(new Board(b.getId(), b.getWorkspaceId(), name));
+        return new Result(saved.getId(), saved.getWorkspaceId(), saved.getName());
     }
 }
