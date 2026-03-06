@@ -2,9 +2,11 @@ package com.Carldevweb.archboard.card.app;
 
 import com.Carldevweb.archboard.card.domain.Card;
 import com.Carldevweb.archboard.card.domain.CardRepository;
+import com.Carldevweb.archboard.card.events.CardMovedEvent;
 import com.Carldevweb.archboard.column.domain.ColumnRepository;
 import com.Carldevweb.archboard.common.access.AccessService;
 import com.Carldevweb.archboard.common.api.NotFoundException;
+import com.Carldevweb.archboard.common.events.DomainEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,11 +19,18 @@ public class MoveCardUseCase {
     private final CardRepository cardRepository;
     private final ColumnRepository columnRepository;
     private final AccessService accessService;
+    private final DomainEventPublisher eventPublisher;
 
-    public MoveCardUseCase(CardRepository cardRepository, ColumnRepository columnRepository, AccessService accessService) {
+    public MoveCardUseCase(
+            CardRepository cardRepository,
+            ColumnRepository columnRepository,
+            AccessService accessService,
+            DomainEventPublisher eventPublisher
+    ) {
         this.cardRepository = cardRepository;
         this.columnRepository = columnRepository;
         this.accessService = accessService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -45,11 +54,24 @@ public class MoveCardUseCase {
 
         Long fromColumnId = card.getColumnId();
 
+        Card result;
         if (fromColumnId.equals(toColumnId)) {
-            return moveInsideSameColumn(card, requestedPosition);
+            result = moveInsideSameColumn(card, requestedPosition);
+        } else {
+            result = moveAcrossColumns(card, toColumnId, requestedPosition);
         }
 
-        return moveAcrossColumns(card, toColumnId, requestedPosition);
+        // Event domain (déclenché après le move)
+        eventPublisher.publish(
+                new CardMovedEvent(
+                        fromColumn.getBoardId(),
+                        card.getId(),
+                        fromColumnId,
+                        toColumnId
+                )
+        );
+
+        return result;
     }
 
     private Card moveInsideSameColumn(Card card, int requestedPosition) {
