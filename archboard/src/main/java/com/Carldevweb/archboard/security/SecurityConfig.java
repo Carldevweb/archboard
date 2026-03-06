@@ -44,7 +44,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/health").permitAll()
-                        .requestMatchers(HttpMethod.PATCH, "/api/v1/columns/*/move").authenticated()
+                        .requestMatchers("/api/v1/workspaces/**").authenticated()
+                        .requestMatchers("/api/v1/boards/**").authenticated()
+                        .requestMatchers("/api/v1/columns/**").authenticated()
+                        .requestMatchers("/api/v1/cards/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
