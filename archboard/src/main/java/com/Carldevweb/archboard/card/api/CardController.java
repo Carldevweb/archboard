@@ -60,6 +60,10 @@ public class CardController {
     @PatchMapping("/cards/{cardId}/move")
     public CardResponse move(@PathVariable Long cardId, @RequestBody @Valid MoveCardRequest request) {
         Long userId = currentUser.id();
+        System.out.println("MOVE CARD - current user id = " + userId);
+        System.out.println("MOVE CARD - cardId = " + cardId);
+        System.out.println("MOVE CARD - toColumnId = " + request.toColumnId());
+        System.out.println("MOVE CARD - position = " + request.position());
         var moved = moveCardUseCase.execute(userId, cardId, request.toColumnId(), request.position());
         return CardResponse.from(moved);
     }

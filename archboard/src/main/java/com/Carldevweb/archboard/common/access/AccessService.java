@@ -36,6 +36,10 @@ public class AccessService {
         Board b = boards.findById(boardId)
                 .orElseThrow(() -> new NotFoundException("Board not found"));
 
+        System.out.println("ACCESS CHECK - ownerId = " + ownerId);
+        System.out.println("ACCESS CHECK - boardId = " + boardId);
+        System.out.println("ACCESS CHECK - workspaceId = " + b.getWorkspaceId());
+
         // sécurité : le board doit appartenir à un workspace du owner
         workspaces.findByIdAndOwnerId(b.getWorkspaceId(), ownerId)
                 .orElseThrow(() -> new NotFoundException("Board not found"));
